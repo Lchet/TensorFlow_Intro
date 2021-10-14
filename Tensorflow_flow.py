@@ -211,7 +211,7 @@ def exercise_2():
     y = tf.Variable(data[['y']].values, dtype=tf.float32)
     # no need activation as it is a linear problem
     reg_nn = NN(1, [(2, identity), (1, identity)], "Regression")
-    loss_history = reg_nn.fit(x, y, epochs=50, batch_size=32, l_r=0.001)
+    loss_history = reg_nn.fit(x, y, epochs=200, batch_size=32, l_r=0.001)
     metrics = pd.DataFrame({"Loss": [loss.numpy() for loss in loss_history]})
     data['y_pred'] = reg_nn.predict(x).numpy()
     # plt.figure()
@@ -245,7 +245,7 @@ def exercise_3():
         # labels
         labels = ds[['AveragePrice']]
         # drop unnecessary features
-        ds = ds.drop(columns=['Date', 'AveragePrice', 'type'])
+        ds = ds.drop(columns=['Date', 'AveragePrice'])
 
         # process data - categorical
         cat_cols = ds.columns[(ds.dtypes == 'object')]
@@ -270,17 +270,17 @@ def exercise_3():
 
     avocado = pd.read_csv('avocado.csv')
     data, labels = process_data(avocado)
-    X_train, X_test, y_train, y_test = train_test_split(data, labels, test_size=0.33, random_state=32)
+    X_train, X_test, y_train, y_test = train_test_split(data, labels, test_size=0.12, random_state=42)
     # crate tensor obj
     x_train = tf.constant(X_train.values, dtype=tf.float32)
     y_train = tf.Variable(y_train.values, dtype=tf.float32)
     x_test = tf.constant(X_test.values, dtype=tf.float32)
 
     avocado_model = NN(input_size=x_train.shape[-1],
-                       layers=[(256, tf.nn.leaky_relu), (128, tf.nn.leaky_relu), (128, tf.nn.leaky_relu), (1, identity)],
+                       layers=[(128, tf.nn.tanh), (128, tf.nn.leaky_relu), (64, tf.nn.relu), (1, identity)],
                        name='avocado')
 
-    loss_history = avocado_model.fit(x_train, y_train, epochs=200, batch_size=64, l_r=0.001)
+    loss_history = avocado_model.fit(x_train, y_train, epochs=150, batch_size=128, l_r=0.0001)
 
     metrics = pd.DataFrame({"Loss": [loss.numpy() for loss in loss_history]})
     metrics.plot()
@@ -288,11 +288,11 @@ def exercise_3():
 
     # run predictions on the test
     result = y_test.copy()
-    result['y_pred'] = avocado_model.predict(x_test).numpy()
+    result['AveragePrice_Predict'] = avocado_model.predict(x_test).numpy()
     sns.pairplot(result)
     plt.show()
 
-    loss_pred = loss(result['AveragePrice'].values, result['y_pred'].values)
+    loss_pred = loss(result['AveragePrice'].values, result['AveragePrice_Predict'].values)
     print(f"\n model: {avocado_model} loss: {loss_pred}")
 
 
